@@ -1,0 +1,56 @@
+{
+    "name": "manage_caldav_event",
+    "description": "Create, update, or query CalDAV events",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": [
+                    "create",
+                    "update",
+                    "query"
+                ],
+                "description": "The action to be performed on the CalDAV event"
+            },
+            "event": {
+                "type": "object",
+                "properties": {
+                    "UID": {
+                        "type": "string",
+                        "description": "Unique identifier for the event"
+                    },
+                    "DTSTART": {
+                        "type": "string",
+                        "description": "Start time of the event in UTC format"
+                    },
+                    "DTEND": {
+                        "type": "string",
+                        "description": "End time of the event in UTC format"
+                    },
+                    "SUMMARY": {
+                        "type": "string",
+                        "description": "A brief description or summary of the event"
+                    },
+                    "DESCRIPTION": {
+                        "type": "string",
+                        "description": "A more detailed description of the event"
+                    },
+                    "LOCATION": {
+                        "type": "string",
+                        "description": "The location of the event"
+                    }
+                },
+                "required": [
+                    "UID",
+                    "DTSTART",
+                    "SUMMARY"
+                ]
+            }
+        },
+        "required": [
+            "action",
+            "event"
+        ]
+    }
+}

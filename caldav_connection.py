@@ -59,3 +59,5 @@ def cal_list_events(start_datetime, end_datetime):
 # Usage example:
 # create_event('Meeting with Bob', datetime(2023, 11, 8, 15, 0), datetime(2023, 11, 8, 16, 0), 'Discuss project milestones.')
 # events = list_events(datetime.now(), datetime.now() + timedelta(days=7))
+
+print(cal_list_events)

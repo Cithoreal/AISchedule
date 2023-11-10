@@ -19,7 +19,7 @@ bot = commands.Bot(command_prefix='!',intents=discord.Intents.default())
 
 
 # Load NLP model
-#nlp = pipeline('fill-mask', model='bert-base-uncased')
+#nlp = pipeline('ner', model='dbmdz/bert-large-cased-finetuned-conll03-english', tokenizer='dbmdz/bert-large-cased-finetuned-conll03-english')
 
 # Event handler for when the bot is ready
 @bot.event
@@ -39,33 +39,29 @@ async def on_message(message):
     # This line is important, it ensures that other commands can be processed
     await bot.process_commands(message)
 
-# Command to schedule an event
+# Example usage in the schedule command
 @bot.command(name='schedule', help='Schedules a new event. Usage: !schedule [event details]')
 async def schedule(ctx, *, event_details: str):
-    try:
-        # Use the NLP model to extract date, time, and event name from event_details
-        # Here we'll just mock this up as static values for demonstration
-        # In practice, you'd replace these with the parsed values from the NLP output
-        event_name = "New Event"
-        event_start = datetime(2023, 11, 10, 15, 0)
-        event_end = datetime(2023, 11, 10, 16, 0)
-        event_description = "This is a test event"
+    print("schedule dis")
+    #try:
+        # Extract event details from the input
+        #event_name, event_date, event_time = extract_event_details(event_details)
 
-        # Convert to server's timezone if necessary
-        # event_start = event_start.astimezone(pytz.timezone("Your/Timezone"))
-        # event_end = event_end.astimezone(pytz.timezone("Your/Timezone"))
+        # TODO: Convert event_date and event_time to a datetime object
+        # TODO: You'll likely need additional parsing logic to handle event_name extraction properly
 
-        # Call the create_event function from the CalDav interaction code
-        cal_create_event(event_name, event_start, event_end, event_description)
+        # After parsing the details, interact with CalDav to schedule the event
+        # And check for any conflicts before finalizing the event
 
-        # Confirm event creation to the user
-        confirmation_message = f"Your event '{event_name}' has been scheduled for {event_start.strftime('%Y-%m-%d %H:%M')}!"
-        await ctx.send(confirmation_message)
+        # For now, let's just assume the parsing went well and confirm back to the user
+        #confirmation_message = f"Your event '{event_name}' has been scheduled for {event_date} at {event_time}!"
+        #print(confirmation_message)
+        #await ctx.send(confirmation_message)
 
-    except Exception as e:
-        # Handle any errors that occur during scheduling
-        error_message = f"An error occurred while scheduling your event: {str(e)}"
-        await ctx.send(error_message)
+    #except Exception as e:
+    #    # Handle any errors that occur during scheduling
+    #    error_message = f"An error occurred while scheduling your event: {str(e)}"
+    #    await ctx.send(error_message)
 
 
 @bot.command(name='list', help='Lists scheduled events.')
@@ -105,6 +101,28 @@ async def on_command_error(ctx, error):
 
 # Helper functions would go here
 
+""" def extract_event_details(text):
+    # Use the NLP model to extract named entities
+    entities = nlp(text)
+
+    # Initialize placeholders
+    event_name = None
+    event_date = None
+    event_time = None
+
+    # Example logic to extract entities for event details (this will likely need to be more robust in practice)
+    for entity in entities:
+        if entity['entity'] == 'B-TIME' or entity['entity'] == 'I-TIME':
+            event_time = entity['word']
+        elif entity['entity'] == 'B-DATE' or entity['entity'] == 'I-DATE':
+            event_date = entity['word']
+        # You can expand this to look for other entities, such as location or people
+
+    # Process extracted entities to construct the event details
+    # This may involve converting the date and time to a datetime object
+    # You may also want to use additional parsing to get the event name
+
+    return event_name, event_date, event_time """
 
 # Initialize and run the bot
 if __name__ == "__main__":
