@@ -4,8 +4,10 @@ from datetime import datetime, timedelta
 import bot
 import discord
 from discord.ext import commands
-from transformers import pipeline
 from caldav_connection import cal_create_event, cal_list_events
+from openai import OpenAI
+
+from openai_process import process_request
 
 
 
@@ -15,11 +17,9 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 # Create the bot with a command prefix
 
 bot = commands.Bot(command_prefix='!',intents=discord.Intents.default())
+openai = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
 
-
-# Load NLP model
-#nlp = pipeline('ner', model='dbmdz/bert-large-cased-finetuned-conll03-english', tokenizer='dbmdz/bert-large-cased-finetuned-conll03-english')
 
 # Event handler for when the bot is ready
 @bot.event
@@ -42,26 +42,9 @@ async def on_message(message):
 # Example usage in the schedule command
 @bot.command(name='schedule', help='Schedules a new event. Usage: !schedule [event details]')
 async def schedule(ctx, *, event_details: str):
-    print("schedule dis")
-    #try:
-        # Extract event details from the input
-        #event_name, event_date, event_time = extract_event_details(event_details)
-
-        # TODO: Convert event_date and event_time to a datetime object
-        # TODO: You'll likely need additional parsing logic to handle event_name extraction properly
-
-        # After parsing the details, interact with CalDav to schedule the event
-        # And check for any conflicts before finalizing the event
-
-        # For now, let's just assume the parsing went well and confirm back to the user
-        #confirmation_message = f"Your event '{event_name}' has been scheduled for {event_date} at {event_time}!"
-        #print(confirmation_message)
-        #await ctx.send(confirmation_message)
-
-    #except Exception as e:
-    #    # Handle any errors that occur during scheduling
-    #    error_message = f"An error occurred while scheduling your event: {str(e)}"
-    #    await ctx.send(error_message)
+   
+    message = process_request(event_details)
+    await bot.process_commands(message)
 
 
 @bot.command(name='list', help='Lists scheduled events.')
