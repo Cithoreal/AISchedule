@@ -1,3 +1,4 @@
+import json
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
@@ -7,7 +8,7 @@ from discord.ext import commands
 from caldav_connection import cal_create_event, cal_list_events
 from openai import OpenAI
 
-from openai_process import process_request
+from openai_process import process_caldav, process_message
 
 
 
@@ -42,9 +43,22 @@ async def on_message(message):
 # Example usage in the schedule command
 @bot.command(name='schedule', help='Schedules a new event. Usage: !schedule [event details]')
 async def schedule(ctx, *, event_details: str):
-   
-    message = process_request(event_details)
-    await bot.process_commands(message)
+    try:
+        data = process_caldav(event_details)
+
+        # Process the event details to extract the event name, date, and time
+       # print(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+        schedule_event(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+
+        message = process_message(data)
+
+
+        await ctx.send(message)
+    except Exception as e:
+        # Handle any errors that occur during event listing
+        error_message = f"An error occurred while scheduling your events: {str(e)}"
+        await ctx.send(error_message)
+
 
 
 @bot.command(name='list', help='Lists scheduled events.')
@@ -82,30 +96,33 @@ async def on_command_error(ctx, error):
     else:
         await ctx.send("An error occurred: {}".format(str(error)))
 
-# Helper functions would go here
 
-""" def extract_event_details(text):
-    # Use the NLP model to extract named entities
-    entities = nlp(text)
 
-    # Initialize placeholders
-    event_name = None
-    event_date = None
-    event_time = None
+def schedule_event(event_details):
+    event_summary = None
+    event_date_start = None
+    event_date_end = None
+    event_description = None
+    event_location = None
+    print(event_details)
+    if ("SUMMARY" in json.loads(event_details)["event"].keys()):
+        event_summary = json.loads(event_details)["event"]["SUMMARY"]
 
-    # Example logic to extract entities for event details (this will likely need to be more robust in practice)
-    for entity in entities:
-        if entity['entity'] == 'B-TIME' or entity['entity'] == 'I-TIME':
-            event_time = entity['word']
-        elif entity['entity'] == 'B-DATE' or entity['entity'] == 'I-DATE':
-            event_date = entity['word']
-        # You can expand this to look for other entities, such as location or people
+    if ("DTSTART" in json.loads(event_details)["event"].keys()):
+        event_date_start = datetime.fromisoformat(json.loads(event_details)["event"]["DTSTART"])
 
-    # Process extracted entities to construct the event details
-    # This may involve converting the date and time to a datetime object
-    # You may also want to use additional parsing to get the event name
+    if ("DTEND" in json.loads(event_details)["event"].keys()):
+        event_date_end = datetime.fromisoformat(json.loads(event_details)["event"]["DTEND"])
 
-    return event_name, event_date, event_time """
+    if ("DESCRIPTION" in json.loads(event_details)["event"].keys()):
+        event_description = json.loads(event_details)["event"]["DESCRIPTION"]
+
+    if ("LOCATION" in json.loads(event_details)["event"].keys()):
+        event_location = json.loads(event_details)["event"]["LOCATION"]
+
+    cal_create_event(event_summary, event_date_start, event_date_end, event_description, event_location)
+
+
 
 # Initialize and run the bot
 if __name__ == "__main__":

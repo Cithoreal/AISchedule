@@ -3,8 +3,8 @@ from dotenv import load_dotenv
 from datetime import datetime, timedelta
 import pytz  # for timezone conversion
 import caldav
-from icalendar import Calendar, Event
-from icalendar import Event as ICalendarEvent
+from icalendar import Calendar, Event, Timezone
+
 
 load_dotenv()
 
@@ -19,18 +19,26 @@ if calendars:
     calendar = calendars[0]
 
 # Function to create an event on the calendar
-def cal_create_event(summary, start_datetime, end_datetime, description=''):
+def cal_create_event(summary, start, end, description, location):
     # Create the event
     event = Event()
+    timezone = Timezone()
 
-    event.add('summary', summary)
-    event.add('dtstart', start_datetime)
-    event.add('dtend', end_datetime)
-    event.add('dtstamp', datetime.utcnow())
-    event.add('description', description)
+    if summary is not None:
+        event.add('summary', summary)
+    if start is not None:
+        event.add('dtstart', start)
+    if end is not None:
+        event.add('dtend', end)
+    if description is not None:
+        event.add('description', description)
+    if location is not None:
+        event.add('location', location)
+    
 
      # Create the event on the CalDav server
     try:
+        calendar.add
         calendar.add_event(event.to_ical())
     except Exception as e:
         print(f"An error occurred: {e}")
@@ -52,6 +60,7 @@ def cal_list_events(start_datetime, end_datetime):
                     'summary': component.get('summary'),
                     'start': component.get('dtstart').dt,
                     'end': component.get('dtend').dt,
+                    'time': component.get('dtstamp').dt,
                     'description': component.get('description')
                 })
     return events
