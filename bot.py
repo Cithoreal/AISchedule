@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 import bot
 import discord
 from discord.ext import commands
-from caldav_connection import cal_create_event, cal_list_events
+from caldav_connection import cal_create_event, cal_list_events, cal_create_todo
 from openai import OpenAI
 
 from openai_process import process_caldav, process_message
@@ -47,13 +47,21 @@ async def schedule(ctx, *, event_details: str):
         data = process_caldav(event_details)
 
         # Process the event details to extract the event name, date, and time
-       # print(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
-        schedule_event(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+        #print(data)
+        if (data.status == "completed"):
+            raise Exception("OpenAI could not complete the request at this time. Please try again later.")
+        #print(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+        while (type(data) is not str):
+ 
+            if ("event" in json.loads(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)):
+                schedule_event(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+            elif ("task" in json.loads(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)):
+                schedule_task(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+                            
+            data = process_message(data)
 
-        message = process_message(data)
 
-
-        await ctx.send(message)
+        await ctx.send(data)
     except Exception as e:
         # Handle any errors that occur during event listing
         error_message = f"An error occurred while scheduling your events: {str(e)}"
@@ -104,6 +112,7 @@ def schedule_event(event_details):
     event_date_end = None
     event_description = None
     event_location = None
+    event_category = None
     print(event_details)
     if ("SUMMARY" in json.loads(event_details)["event"].keys()):
         event_summary = json.loads(event_details)["event"]["SUMMARY"]
@@ -120,8 +129,47 @@ def schedule_event(event_details):
     if ("LOCATION" in json.loads(event_details)["event"].keys()):
         event_location = json.loads(event_details)["event"]["LOCATION"]
 
-    cal_create_event(event_summary, event_date_start, event_date_end, event_description, event_location)
+    if ("CATEGORY" in json.loads(event_details)["event"].keys()):
+        event_category = json.loads(event_details)["event"]["CATEGORY"]
 
+    cal_create_event(event_summary, event_date_start, event_date_end, event_description, event_location, event_category)
+
+def schedule_task(task_details):
+
+    task_summary = None
+    task_due = None
+    task_percent = None
+    task_priority = None
+    task_status = None
+    task_description = None
+    task_location = None
+    task_category = None
+
+    if ("SUMMARY" in json.loads(task_details)["task"].keys()):
+        task_summary = json.loads(task_details)["task"]["SUMMARY"]
+
+    if ("DUE" in json.loads(task_details)["task"].keys()):
+        task_due = datetime.fromisoformat(json.loads(task_details)["task"]["DTSTART"])
+
+    if ("PERCENT" in json.loads(task_details)["task"].keys()):
+        task_percent = json.loads(task_details)["task"]["PERCENT"]
+
+    if ("PRIORITY" in json.loads(task_details)["task"].keys()):
+        task_priority = json.loads(task_details)["task"]["PRIORITY"]
+    
+    if ("STATUS" in json.loads(task_details)["task"].keys()):
+        task_status = json.loads(task_details)["task"]["STATUS"]
+
+    if ("DESCRIPTION" in json.loads(task_details)["task"].keys()):
+        task_description = json.loads(task_details)["task"]["DESCRIPTION"]
+
+    if ("LOCATION" in json.loads(task_details)["task"].keys()):
+        task_location = json.loads(task_details)["task"]["LOCATION"]
+
+    if ("CATEGORY" in json.loads(task_details)["task"].keys()):
+        task_category = json.loads(task_details)["task"]["CATEGORY"]
+
+    cal_create_todo(task_summary, task_due, task_percent, task_priority, task_status, task_description, task_location, task_category)
 
 
 # Initialize and run the bot

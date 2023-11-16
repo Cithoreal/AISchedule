@@ -1,0 +1,77 @@
+{
+  "name": "manage_caldav_task",
+  "description": "Create, update, or query CalDAV tasks",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "task": {
+        "type": "object",
+        "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "query"
+            ],
+            "description": "The action to be performed on the CalDAV task"
+          },
+          "UID": {
+            "type": "string",
+            "description": "Unique identifier for the task"
+          },
+          "DTSTART": {
+            "type": "string",
+            "description": "Start time of the task in UTC format"
+          },
+          "DTEND": {
+            "type": "string",
+            "description": "End time of the task in UTC format"
+          },
+          "DUE":{
+            "type": "string",
+            "description": "Due time of the task in UTC format"
+          },
+          "PERCENT":{
+            "type": "string",
+            "description": "Percent complete of the task"
+          },
+          "PRIORITY":{
+            "type": "string",
+            "description": "Priority of the task"
+          },
+          "Status":{
+            "type": "string",
+            "description": "Status of the task"
+          },
+          "SUMMARY": {
+            "type": "string",
+            "description": "A brief description or summary of the task"
+          },
+          "DESCRIPTION": {
+            "type": "string",
+            "description": "A more detailed description of the task"
+          },
+          "LOCATION": {
+            "type": "string",
+            "description": "The location of the task"
+          },
+          "CATEGORY": {
+            "type": "string",
+            "description": "The category of the task"
+          }
+        },
+        "required": [
+          "action",
+          "UID",
+          "DTSTART",
+          "SUMMARY",
+          "CATEGORY"
+        ]
+      }
+    },
+    "required": [
+      "task"
+    ]
+  }
+}

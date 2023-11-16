@@ -4,18 +4,18 @@
   "parameters": {
     "type": "object",
     "properties": {
-      "action": {
-        "type": "string",
-        "enum": [
-          "create",
-          "update",
-          "query"
-        ],
-        "description": "The action to be performed on the CalDAV event"
-      },
       "event": {
         "type": "object",
         "properties": {
+          "action": {
+            "type": "string",
+            "enum": [
+              "create",
+              "update",
+              "query"
+            ],
+            "description": "The action to be performed on the CalDAV event"
+          },
           "UID": {
             "type": "string",
             "description": "Unique identifier for the event"
@@ -39,17 +39,22 @@
           "LOCATION": {
             "type": "string",
             "description": "The location of the event"
+          },
+          "CATEGORY": {
+            "type": "string",
+            "description": "The category of the event"
           }
         },
         "required": [
+          "action",
           "UID",
           "DTSTART",
-          "SUMMARY"
+          "SUMMARY",
+          "CATEGORY"
         ]
       }
     },
     "required": [
-      "action",
       "event"
     ]
   }

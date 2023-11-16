@@ -24,6 +24,10 @@ def process_caldav(user_request):
       thread_id=thread.id,
       run_id=run.id
     )
+    if run.status == 'completed':
+      print("Run moved to completed, something went wrong.")
+      break
+ 
 
   #print(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
   return run
@@ -47,6 +51,8 @@ def process_message(run):
       thread_id=thread.id,
       run_id=run.id
     )
+    if run.status == 'requires_action':
+      return run
 
   messages = client.beta.threads.messages.list(
     thread_id=thread.id
