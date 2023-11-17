@@ -103,6 +103,37 @@ def cal_create_todo(summary, due, percent, priority, status, description, locati
         print(f"An error occurred: {e}")
         raise
 
+def cal_list_tasks():
+    results = calendar.todos()
 
+    tasks = []
+    for task in results:
+
+        ical_event = Calendar.from_ical(task.data)
+        for component in ical_event.walk():
+            if component.name == "VTODO":
+                tasks.append({
+                    'uid': component.get('uid'), 
+                    'summary': component.get('summary'),
+                    'due': component.get('due'),
+                    'percent': component.get('percent'),
+                    'priority': component.get('priority'),
+                    'status': component.get('status'),
+                    'description': component.get('description'),
+                    'location': component.get('location'),
+                    'category': component.get('category')
+                })
+    return tasks
+#events = cal_list_events(datetime.now(), datetime.now() + timedelta(days=7))
 #cal_create_todo("test",datetime(2023, 11, 15, 15, 0),"test","test",23,2,"NEEDS-ACTION")
 #cal_create_event("test",datetime(2023, 11, 15, 15, 0),datetime(2023, 11, 15, 16, 0),"test","test","test")
+'''response_message = "Here are your upcoming events:\n"
+for event in events:
+    response_message += f"**{event['summary']}**: {event['start'].strftime('%Y-%m-%d %H:%M')} - {event['end'].strftime('%Y-%m-%d %H:%M')}\n"
+print(response_message)'''
+'''tasks = cal_list_tasks()
+response_message = "Here are your upcoming tasks:\n"
+for task in tasks:
+    response_message += f"{task['summary']}\n"
+print(response_message)'''
+#print(tasks)

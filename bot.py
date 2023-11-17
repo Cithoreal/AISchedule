@@ -5,10 +5,10 @@ from datetime import datetime, timedelta
 import bot
 import discord
 from discord.ext import commands
-from caldav_connection import cal_create_event, cal_list_events, cal_create_todo
+from caldav_connection import *
 from openai import OpenAI
 
-from openai_process import process_caldav, process_message
+from openai_functions.openai_process import *
 
 
 
@@ -31,14 +31,40 @@ async def on_ready():
     await bot.change_presence(status=discord.Status.idle, activity=activity)
 
 @bot.event
-async def on_message(message):
-    # If the bot is mentioned, respond with a helpful message
-    if bot.user.mentioned_in(message):
-        help_message = "Hi there! I can help you schedule your events. Try using the `!schedule` command!"
-        await message.channel.send(help_message)
-    
-    # This line is important, it ensures that other commands can be processed
-    await bot.process_commands(message)
+async def on_message(ctx):
+    try:
+        print(ctx.content)
+
+        if not ctx.author.bot:
+            send_message(ctx.content)
+            run = start_run()
+            run = await retrieve_run(run)
+            #If completed, send the message to the user
+            while (run.status != "completed"):
+                #if name is list_upcoming, then get the list from caldav, format it, and send it as a message to the thread
+                if ("list_upcoming" in run.required_action.submit_tool_outputs.tool_calls[0].function.name):
+                    print(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+                    tasks = await list_tasks()
+                    process_message(run)
+                    send_message(tasks)
+                    run = start_run()
+                    run = await retrieve_run(run)
+                elif ("event" in run.required_action.submit_tool_outputs.tool_calls[0].function.arguments):
+                    print(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+                    process_message(run)
+                    #schedule_event(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+                elif ("task" in run.required_action.submit_tool_outputs.tool_calls[0].function.arguments):
+                    print(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+                    process_message(run)
+                    #schedule_task(data.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+
+            data = retrieve_message()
+            await ctx.channel.send(data)
+
+
+    except Exception as e:
+        error_message = f"An error occurred while processing your message: {str(e)}"
+        await ctx.channel.send(error_message)
 
 # Example usage in the schedule command
 @bot.command(name='schedule', help='Schedules a new event. Usage: !schedule [event details]')
@@ -96,6 +122,13 @@ async def list_events(ctx):
         await ctx.send(error_message)
 
 
+async def list_tasks():
+    tasks = cal_list_tasks()
+    response_message = "CALENDAR: Here are the upcoming tasks:\n"
+    for task in tasks:
+        #Need to add UIDs for each task
+        response_message += f"**{task['summary']}**UID:{task['uid']}\n"
+    return response_message
 # Error handling
 @bot.event
 async def on_command_error(ctx, error):

@@ -4,18 +4,18 @@
   "parameters": {
     "type": "object",
     "properties": {
+      "action": {
+        "type": "string",
+        "enum": [
+          "create",
+          "update",
+          "query"
+        ],
+        "description": "The action to be performed on the CalDAV task"
+      },
       "task": {
         "type": "object",
         "properties": {
-          "action": {
-            "type": "string",
-            "enum": [
-              "create",
-              "update",
-              "query"
-            ],
-            "description": "The action to be performed on the CalDAV task"
-          },
           "UID": {
             "type": "string",
             "description": "Unique identifier for the task"
@@ -59,18 +59,23 @@
           "CATEGORY": {
             "type": "string",
             "description": "The category of the task"
+          },
+          "CALENDAR":{
+            "type": "string",
+            "description": "The calendar to which the task belongs"
           }
         },
         "required": [
-          "action",
           "UID",
           "DTSTART",
           "SUMMARY",
-          "CATEGORY"
+          "CATEGORY",
+          "CALENDAR"
         ]
       }
     },
     "required": [
+      "action",
       "task"
     ]
   }
