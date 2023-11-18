@@ -1,7 +1,5 @@
 import os
 from dotenv import load_dotenv
-from datetime import datetime, timedelta
-import pytz  # for timezone conversion
 import caldav
 from icalendar import Calendar, Event, Timezone, Todo, Journal
 
@@ -17,7 +15,7 @@ calendars = principal.calendars()
 
 if calendars:
     # Assuming you want to work with the first calendar
-    calendar = calendars[1]
+    calendar = calendars[2]
     
 # Function to create an event on the calendar
 def cal_create_event(summary, start, end, description, location, category):

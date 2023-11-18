@@ -8,7 +8,7 @@ from discord.ext import commands
 from caldav_connection import *
 from openai import OpenAI
 
-from openai_functions.openai_process import *
+from openai_process import *
 
 
 
