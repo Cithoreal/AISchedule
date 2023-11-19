@@ -41,6 +41,7 @@ async def message_ai(message):
 
         data = retrieve_message()
         print(data)
+        return(data)
 
     except Exception as e:
         error_message = f"An error occurred while processing your message: {str(e)}"
