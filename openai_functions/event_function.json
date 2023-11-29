@@ -1,66 +1,116 @@
 {
-  "name": "manage_caldav_event",
-  "description": "Create, update, or query CalDAV events",
-  "parameters": {
-    "type": "object",
-    "properties": {
-      "action": {
-        "type": "string",
-        "enum": [
-          "create",
-          "update",
-          "query"
-        ],
-        "description": "The action to be performed on the CalDAV event"
-      },
-      "event": {
-        "type": "object",
-        "properties": {
-          "UID": {
-            "type": "string",
-            "description": "Unique identifier for the event"
-          },
-          "DTSTART": {
-            "type": "string",
-            "description": "Start time of the event in UTC format"
-          },
-          "DTEND": {
-            "type": "string",
-            "description": "End time of the event in UTC format"
-          },
-          "SUMMARY": {
-            "type": "string",
-            "description": "A brief description or summary of the event"
-          },
-          "DESCRIPTION": {
-            "type": "string",
-            "description": "A more detailed description of the event"
-          },
-          "LOCATION": {
-            "type": "string",
-            "description": "The location of the event"
-          },
-          "CATEGORY": {
-            "type": "string",
-            "description": "The category of the event"
-          },
-          "CALENDAR": {
-            "type": "string",
-            "description": "The calendar to which the event belongs"
-          }
+  "type": "function",
+  "function": {
+    "name": "manage_caldav_event",
+    "description": "Create, update, or query CalDAV events",
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "create",
+            "update",
+            "delete",
+            "query"
+          ],
+          "description": "The action to be performed on the CalDAV event"
         },
-        "required": [
-          "UID",
-          "DTSTART",
-          "SUMMARY",
-          "CATEGORY",
-          "CALENDAR"
-        ]
-      }
-    },
-    "required": [
-      "action",
-      "event"
-    ]
+        "event": {
+          "type": "object",
+          "properties": {
+            "UID": {
+              "type": "string",
+              "description": "Unique identifier for the event"
+            },
+            "DTSTART": {
+              "type": "string",
+              "description": "Start time of the event in UTC format"
+            },
+            "DTEND": {
+              "type": "string",
+              "description": "End time of the event in UTC format"
+            },
+            "SUMMARY": {
+              "type": "string",
+              "description": "A brief description or summary of the event"
+            },
+            "DESCRIPTION": {
+              "type": "string",
+              "description": "A more detailed description of the event"
+            },
+            "LOCATION": {
+              "type": "string",
+              "description": "The location of the event"
+            },
+            "RRULE": {
+              "type": "object",
+              "description": "The recurrence rule for the event",
+              "properties": {
+                "FREQ": {
+                  "type": "string",
+                  "enum": [
+                    "DAILY",
+                    "WEEKLY",
+                    "MONTHLY",
+                    "YEARLY"
+                  ],
+                  "description": "The frequency of the event"
+                },
+                "INTERVAL": {
+                  "type": "integer",
+                  "description": "The interval between events"
+                },
+                "COUNT": {
+                  "type": "integer",
+                  "description": "The number of times the event will occur"
+                },
+                "UNTIL": {
+                  "type": "string",
+                  "description": "The date on which the event will stop recurring"
+                },
+                "BYDAY": {
+                  "type": "string",
+                  "description": "The day(s) of the week on which the event will occur"
+                },
+                "BYMONTHDAY": {
+                  "type": "integer",
+                  "description": "The day of the month on which the event will occur"
+                },
+                "BYMONTH": {
+                  "type": "integer",
+                  "description": "The month in which the event will occur"
+                }
+              }
+            },
+            "CATEGORIES": {
+              "type": "string",
+              "description": "The categories of the task. Comma separated list."
+            },
+            "CALENDAR": {
+              "type": "string",
+              "enum": [
+                "personal",
+                "school",
+                "work",
+                "time blocks"
+              ],
+              "description": "The calendar to which the event belongs."
+            }
+          },
+          "required": [
+            "UID",
+            "DTSTART",
+            "SUMMARY",
+            "CATEGORIES",
+            "CALENDAR"
+          ]
+        }
+      },
+      "required": [
+        "action",
+        "event"
+      ]
+    }
   }
 }

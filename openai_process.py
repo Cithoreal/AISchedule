@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
@@ -11,14 +11,20 @@ def start_run():
   run = client.beta.threads.runs.create(
     thread_id=thread.id,
     assistant_id=os.getenv('OPENAI_ASSISTANT_ID'),
-    instructions="You are a schedule assistant. Your job is to help the user add events and tasks to their calendar. You should help them maintain a healthy time balance. The current date and time is " + datetime.now().strftime("%m/%d/%Y %H:%M:%S"),
-  )
+    instructions="You are a schedule assistant. Your job is to help the user add events and tasks to their calendar. \
+    You should help them maintain a healthy time balance. \n \
+    There are three calendars to work with: Personal, School, and Projects. \n \
+    Additionally there is a Time Blocks calendar that defines when different categories of events and tasks should be planned in the day.\n \
+    The current date and time is " + datetime.now().strftime("%m/%d/%Y %H:%M:%S") + " \n \
+    Prefer the day of the week name over the date when referring to near dates. \n \
+    Don't make up information, use only the information provided by the user.",
+  ) #Rather than explicitly telling the calendars here or in the function jsons, the program should grab a list of the calendars 
   return run
 
-def send_message(message):
+def send_message(message, role="user"):
   client.beta.threads.messages.create(
       thread_id=thread.id,
-      role="user",
+      role=role,
       content=message,
   )
 
@@ -43,35 +49,8 @@ def retrieve_message():
   )
   return(messages.data[0].content[0].text.value)
 
-def process_caldav(user_request):
 
-  message = client.beta.threads.messages.create(
-      thread_id=thread.id,
-      role="user",
-      content=user_request,
-  )
-
-  run = client.beta.threads.runs.create(
-    thread_id=thread.id,
-    assistant_id=os.getenv('OPENAI_ASSISTANT_ID'),
-    instructions="The current date and time is " + datetime.now().strftime("%m/%d/%Y %H:%M:%S"),
-  )
-
-  while run.status != 'requires_action':
-    run = client.beta.threads.runs.retrieve(
-      thread_id=thread.id,
-      run_id=run.id
-    )
-    if run.status == 'completed':
-      print("Run moved to completed, something went wrong.")
-      break
- 
-
-  #print(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
-  return run
-
-
-def process_message(run):
+def complete_tool_run(run,message):
   #tool_call_id=run.required_action.submit_tool_outputs.tool_calls[0]
   if (run.status == "requires_action"):
     run = client.beta.threads.runs.submit_tool_outputs(
@@ -80,7 +59,7 @@ def process_message(run):
       tool_outputs=[
         {
           "tool_call_id": run.required_action.submit_tool_outputs.tool_calls[0].id,
-          "output": run.required_action.submit_tool_outputs.tool_calls[0].function.arguments
+          "output": message
         }
       ]
     )
