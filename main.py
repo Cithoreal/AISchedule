@@ -3,10 +3,16 @@ import asyncio
 from datetime import datetime, timedelta
 from caldav_api import *
 
-from openai_process import *
+from openai_schedule_assistant import *
+from openai_chat_completion import *
+import pytz
 
+timezone = pytz.timezone("America/New_York")
 
 cal_dict = {"personal": 0, "school": 1, "work": 2, "time blocks": 3, "holidays": 4}
+#As caldav events and tasks get processed, add to the message cache with results that can be sent to the 
+#AI once the current run is completed and start a new run to get the final message
+message_cache = []
 async def main():
     print("Start Messaging!")
     while True:
@@ -16,7 +22,7 @@ async def main():
 
 async def message_ai(message):
   
-    send_message(message)
+    assistant_send_message(message)
     run = start_run()
     run = await retrieve_run(run)
     #If completed, send the message to the user
@@ -29,74 +35,106 @@ async def message_ai(message):
         if ("event" in run.required_action.submit_tool_outputs.tool_calls[0].function.arguments):
             #print(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
             #process_event(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
-            schedule_event(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
-            complete_tool_run(run, "Event already exists and information was updated.")
+
+
+            process_event(json.loads(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments))
+            run = complete_tool_run(run)
 
             #schedule_event(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
         elif ("task" in run.required_action.submit_tool_outputs.tool_calls[0].function.arguments):
             #print(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
             #schedule_task(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
+
             process_task(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
-            complete_tool_run(run)
+            run = complete_tool_run(run)
             #run = retrieve_run
 
             #schedule_task(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
         run_status = get_run_status(run)
-
+    for (index, message) in enumerate(message_cache):
+        assistant_send_message(message["content"], message["role"])
+    run = start_run()
+    run = await retrieve_run(run)
+    message_cache.clear()
     message = retrieve_message()
     return(message)
 
-#async def message_ai(message):
-#    ai_response = send_message(message, "user", "Chris")
-
-    return ai_response
 
 def process_event(args):
-    args = json.loads(args)
+
+    #Query the calendar for relevant list of events that match the criteria
+    #If there is a list of events, send it to the chat completions API to determine if the event exists
+    #Recieve the url if it exits
     print(args)
+    #args to string
+    dtstart = args["event"]["DTSTART"]
+    #dtstart = datetime.strptime(dtstart, '%m/%d/%Y %H:%M:%S')
+    #dtstart = timezone.localize(dtstart)
+    dtend = args["event"]["DTEND"]
+    #dtend = datetime.strptime(dtend, '%m/%d/%Y %H:%M:%S')
+    #dtend = timezone.localize(dtend)
+    event_list = query_events(datetime.fromisoformat(dtstart), datetime.fromisoformat(dtend))
+    print(event_list)
+    calendar_ai_add_message(json.dumps(args), "system", "Calendar")
+    calendar_ai_add_message(event_list, "system", "Calendar")
+    ai_response = calendar_ai_process_messages()
+    print("AI Response", ai_response)
+   #print(args)
     if args["action"] == "create" or args["action"] == "update":
         #query the calendar to see if the event exists
+        if ("URL" not in ai_response["calendar_item"]): #not ai_response["calendar_item"]["URL"].startswith("https://")
+            schedule_event("create",args)
+            message_cache.append({"role": "system", "name": "Calendar", "content": "Event has been created."})
+        else:
+            message_cache.append({"role": "system", "name": "Calendar", "content": "Event already exists."})
+
+            #Check if there is new information worth updating the event
+            #Compare the args with the details from the event list
+           # schedule_event("update",args, ai_response["calendar_item"]["URL"])
         #if it does, update it
         #if not, create it
-        pass
-        schedule_event(args)
+
     elif args["action"] == "delete":
-        cal_delete_event(args["CALENDAR"], args["url"])
+        print("Deteling event")
+        if ("URL" in ai_response["calendar_item"]):
+            cal_delete_event(cal_dict[args["CALENDAR"]], ai_response["calendar_item"]["URL"])
+            message_cache.append({"role": "system", "name": "Calendar", "content": "Event successfuly deleted."})
+        else: 
+            message_cache.append({"role": "system", "name": "Calendar", "content": "Event does not exist."})
     elif args["action"] == "query":
-        cal_list_events(args["CALENDAR"], args["dtstart"], args["dtend"])
+        cal_list_events(cal_dict[args["CALENDAR"]], args["dtstart"], args["dtend"])
     #if query
     #Check if it exists
     #Just return details if so
     #if delete
     #delete if exists, fine if otherwise
-    print(args)
 
 def process_task(args):
     print(args)
+    #if create or update
+    #check if exists
+    #list all tasks and share with AI to determine if it exists
 
 
-def list_events():
 
-    # Get the current time and the end time for the event listing
-    now = datetime.now()
-    end_time = now + timedelta(days=7)  # List events for the next 7 days
-
+def query_events(dtstart, dtend):
+    #print(dtstart , dtend)
     # Call the list_events function from the CalDav interaction code
-    events = cal_list_events(1, now, end_time)
+    events = cal_list_events(dtstart, dtend)
 
     # Format the list of events for Discord
-    response_message = "*FROM THE CALENDAR API. USE THIS FOR REFERENCE. DON'T SHARE THE UIDs.* \n EVENTS:\n"
+    response_message = "EVENT LIST:\n"
     if events:
         for event in events:
-            response_message += f"**{event['summary']}**: {event['start'].strftime('%Y-%m-%d %H:%M')} - {event['end'].strftime('%Y-%m-%d %H:%M')} - URL:{event['url']} \n"
+            response_message += f"**{event['summary']}**: {event['start'].strftime('%Y-%m-%d %H:%M')} - {event['end'].strftime('%Y-%m-%d %H:%M')} - URL: {event['url']} \n"
     else:
-        response_message = "No upcoming events."
+        response_message = "Empty"
 
     # Send the list of events to the user
     return(response_message)
 
 
-def list_tasks():
+def query_tasks():
     tasks = cal_list_tasks(1)
     response_message = "TASKS:\n"
     if tasks:
@@ -106,7 +144,7 @@ def list_tasks():
 # Error handling
 
 
-def schedule_event(event_details):
+def schedule_event(action, event_details, url = ""):
     event_summary = None
     event_date_start = None
     event_date_end = None
@@ -115,29 +153,31 @@ def schedule_event(event_details):
     event_category = None
     event_rrule = None
     print(event_details)
-    cal = cal_dict[json.loads(event_details)["event"]["CALENDAR"]]
-    if ("SUMMARY" in json.loads(event_details)["event"].keys()):
-        event_summary = json.loads(event_details)["event"]["SUMMARY"]
+    cal = cal_dict[event_details["event"]["CALENDAR"]]
+    if ("SUMMARY" in event_details["event"].keys()):
+        event_summary = event_details["event"]["SUMMARY"]
 
-    if ("DTSTART" in json.loads(event_details)["event"].keys()):
-        event_date_start = datetime.fromisoformat(json.loads(event_details)["event"]["DTSTART"])
+    if ("DTSTART" in event_details["event"].keys()):
+        event_date_start = datetime.fromisoformat(event_details["event"]["DTSTART"])
 
-    if ("DTEND" in json.loads(event_details)["event"].keys()):
-        event_date_end = datetime.fromisoformat(json.loads(event_details)["event"]["DTEND"])
+    if ("DTEND" in event_details["event"].keys()):
+        event_date_end = datetime.fromisoformat(event_details["event"]["DTEND"])
 
-    if ("DESCRIPTION" in json.loads(event_details)["event"].keys()):
-        event_description = json.loads(event_details)["event"]["DESCRIPTION"]
+    if ("DESCRIPTION" in event_details["event"].keys()):
+        event_description = event_details["event"]["DESCRIPTION"]
 
-    if ("LOCATION" in json.loads(event_details)["event"].keys()):
-        event_location = json.loads(event_details)["event"]["LOCATION"]
+    if ("LOCATION" in event_details["event"].keys()):
+        event_location = event_details["event"]["LOCATION"]
 
-    if ("CATEGORY" in json.loads(event_details)["event"].keys()):
-        event_category = json.loads(event_details)["event"]["CATEGORY"]
+    if ("CATEGORY" in event_details["event"].keys()):
+        event_category = event_details["event"]["CATEGORY"]
 
-    if ("RRULE" in json.loads(event_details)["event"].keys()):
-        event_rrule = json.loads(event_details)["event"]["RRULE"]
-
-    cal_create_event(cal, event_summary, event_date_start, event_date_end, event_description, event_location, event_category, event_rrule)
+    if ("RRULE" in event_details["event"].keys()):
+        event_rrule = event_details["event"]["RRULE"]
+    if action == "create":
+        cal_create_event(cal, event_summary, event_date_start, event_date_end, event_description, event_location, event_category, event_rrule)
+    elif action == "update":
+        cal_update_event(cal, url, event_summary, event_date_start, event_date_end, event_description, event_location, event_category, event_rrule)
 
 def schedule_task(task_details):
 

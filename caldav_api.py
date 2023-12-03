@@ -2,10 +2,12 @@ import os
 from dotenv import load_dotenv
 import caldav
 from icalendar import Calendar, Event, Timezone, Todo, Journal
+import pytz
 
 
 load_dotenv()
 
+default_timezone = 'America/New_York'
 # Initialize the CalDav client
 caldav_client = caldav.DAVClient(url=os.getenv('CALDAV_SERVER'), username=os.getenv('CALDAV_USER'), password=os.getenv('CALDAV_PASSWORD'))
 principal = caldav_client.principal()
@@ -18,12 +20,15 @@ calendars = principal.calendars()
 # Function to create an event on the calendar
 def cal_create_event(calendar_num, summary, start, end, description, location, category, rrule):
     calendar = calendars[calendar_num]
+    print(start, end)
 
     # Create the event
     event = Event()
+    ical = Calendar()
     timezone = Timezone()
-    timezone.add('tzid', 'America/New_York')
-    event.add_component(timezone)
+    timezone.add('tzid', default_timezone)
+    ical.add_component(timezone)
+    print(start,end)
     if summary is not None:
         event.add('summary', summary)
     if start is not None:
@@ -38,34 +43,40 @@ def cal_create_event(calendar_num, summary, start, end, description, location, c
         event.add('category', category)
     if rrule is not None:
         event.add('rrule', rrule)
-    
+    ical.add_component(event)
      # Create the event on the CalDav server
     try:
-        calendar.add_event(event.to_ical())
+        calendar.add_event(ical.to_ical())
     except Exception as e:
         print(f"An error occurred: {e}")
         raise
 
 
 # Function to list events on the calendar
-def cal_list_events(calendar_num, start_datetime, end_datetime):
-    calendar = calendars[calendar_num]
+def cal_list_events(start_datetime, end_datetime):
+
+    print(start_datetime, end_datetime)
+    #Check the calendar set
     # Search for events within a time range
-    results = calendar.date_search(start=start_datetime, end=end_datetime)
+    
     # Process the results and return them
+    
     events = []
-    for event in results:
-        ical_event = Calendar.from_ical(event.data)
-        for component in ical_event.walk():
-            if component.name == "VEVENT":
-                events.append({
-                    'url': event.url,
-                    'summary': component.get('summary'),
-                    'start': component.get('dtstart').dt,
-                    'end': component.get('dtend').dt,
-                    'time': component.get('dtstamp').dt,
-                    'description': component.get('description')
-                })
+    for i in range(2): #calendar in calendars:
+        calendar = calendars[i]
+        results = calendar.date_search(start=start_datetime, end=end_datetime)
+        for event in results:
+            ical_event = Calendar.from_ical(event.data)
+            for component in ical_event.walk():
+                if component.name == "VEVENT":
+                    events.append({
+                        'url': event.url,
+                        'summary': component.get('summary'),
+                        'start': component.get('dtstart').dt,
+                        'end': component.get('dtend').dt,
+                        'time': component.get('dtstamp').dt,
+                        'description': component.get('description')
+                    })
     return events
 
 # Usage example:

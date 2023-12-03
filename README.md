@@ -79,5 +79,3 @@ If you'd like to contribute, please fork the repository and create a pull reques
 
 This project is open-sourced under the [MIT License](https://choosealicense.com/licenses/mit/).
 ```
-
-*This project was created in collaboration with ChatGPT

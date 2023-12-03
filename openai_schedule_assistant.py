@@ -21,7 +21,7 @@ def start_run():
   ) #Rather than explicitly telling the calendars here or in the function jsons, the program should grab a list of the calendars 
   return run
 
-def send_message(message, role="user"):
+def assistant_send_message(message, role="user"):
   client.beta.threads.messages.create(
       thread_id=thread.id,
       role=role,
@@ -50,7 +50,7 @@ def retrieve_message():
   return(messages.data[0].content[0].text.value)
 
 
-def complete_tool_run(run,message):
+def complete_tool_run(run):
   #tool_call_id=run.required_action.submit_tool_outputs.tool_calls[0]
   if (run.status == "requires_action"):
     run = client.beta.threads.runs.submit_tool_outputs(
@@ -59,7 +59,7 @@ def complete_tool_run(run,message):
       tool_outputs=[
         {
           "tool_call_id": run.required_action.submit_tool_outputs.tool_calls[0].id,
-          "output": message
+          "output": run.required_action.submit_tool_outputs.tool_calls[0].function.arguments
         }
       ]
     )
@@ -75,4 +75,4 @@ def complete_tool_run(run,message):
   messages = client.beta.threads.messages.list(
     thread_id=thread.id
   )
-  return(messages.data[0].content[0].text.value)
+  return(run)

@@ -4,7 +4,7 @@ import discord_bot
 import discord
 from discord.ext import commands
 
-from openai_process import *
+from openai_schedule_assistant import *
 from main import *
 
 
