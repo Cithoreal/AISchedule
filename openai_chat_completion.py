@@ -8,7 +8,7 @@ import json
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-model = "gpt-3.5-turbo-1106"
+model = "gpt-3.5-turbo-16k"
 
 instructions = "You are a schedule assistant. Your job is to compare the given event or task to the list of events or tasks. If the given item exists in the list, collect the summary and url FROM THE SAME LINE. Do not collect the url if the event does not exist in the list."
 

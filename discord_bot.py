@@ -36,7 +36,7 @@ async def on_message(ctx):
                     await ctx.channel.send(data)
         else:
             if not ctx.author.bot:
-                data = message_ai(ctx.content)
+                data = await message_ai(ctx.content)
                 await ctx.channel.send(data)
         #print(ctx.content)
 

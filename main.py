@@ -51,8 +51,8 @@ async def message_ai(message):
 
             #schedule_task(run.required_action.submit_tool_outputs.tool_calls[0].function.arguments)
         run_status = get_run_status(run)
-    for (index, message) in enumerate(message_cache):
-        assistant_send_message(message["content"], message["role"])
+    #for (index, message) in enumerate(message_cache):
+    #    assistant_send_message(message["content"], message["role"])
     run = start_run()
     run = await retrieve_run(run)
     message_cache.clear()
